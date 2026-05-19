@@ -1,0 +1,95 @@
+<section class="grid gap-6">
+  <div class="flex items-center justify-between">
+    <div>
+      <p class="text-sm text-slate-400">Account</p>
+      <h1 class="text-2xl font-semibold text-white">Account details</h1>
+    </div>
+    <a routerLink="/user" class="text-sm text-emerald-300 hover:text-emerald-200">Back to profile</a>
+  </div>
+
+  <app-alert *ngIf="errorMessage" type="error">
+    {{ errorMessage }}
+  </app-alert>
+
+  <div *ngIf="isLoading" class="text-sm text-slate-400">Loading account...</div>
+
+  <app-card *ngIf="account">
+    <div class="flex flex-wrap items-center justify-between gap-4">
+      <div>
+        <p class="text-sm text-slate-400">Currency</p>
+        <p class="text-xl font-semibold text-white">{{ account.currency }}</p>
+      </div>
+      <div>
+        <p class="text-sm text-slate-400">Balance</p>
+        <p class="text-2xl font-semibold text-white">
+          {{ account.balance ?? 0 | number: '1.2-2' }} {{ account.currency }}
+        </p>
+      </div>
+      <div>
+        <p class="text-sm text-slate-400">Created</p>
+        <p class="text-sm text-white">{{ account.created_at || '—' }}</p>
+      </div>
+    </div>
+  </app-card>
+
+  <app-card>
+    <h2 class="text-xl font-semibold text-white">Transactions</h2>
+    <div class="mt-4 grid gap-2">
+      <button
+        *ngFor="let transaction of transactions"
+        class="flex w-full items-center justify-between rounded-lg border border-slate-800 bg-slate-950/60 px-4 py-3 text-left transition hover:border-indigo-400/70"
+        (click)="openTransaction(transaction)"
+      >
+        <div>
+          <p class="text-sm text-slate-400">{{ transaction.description }}</p>
+          <p class="text-xs text-slate-500">{{ transaction.created_at || '—' }}</p>
+        </div>
+        <div class="text-right">
+          <p
+            class="text-sm font-semibold"
+            [class.text-emerald-300]="transaction.type === 'deposit'"
+            [class.text-rose-300]="transaction.type === 'withdrawal'"
+          >
+            {{ transaction.type === 'deposit' ? '+' : '-' }}{{ transaction.amount | number: '1.2-2' }}
+          </p>
+          <p class="text-xs text-slate-400 uppercase">{{ transaction.type }}</p>
+        </div>
+      </button>
+    </div>
+  </app-card>
+</section>
+
+<div *ngIf="selectedTransaction" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4">
+  <app-card className="w-full max-w-lg shadow-xl" padding="p-6">
+    <div class="flex items-center justify-between">
+      <h3 class="text-lg font-semibold text-white">Transaction details</h3>
+      <app-button variant="ghost" size="sm" (click)="closeTransaction()">Close</app-button>
+    </div>
+    <div class="mt-4 grid gap-3 text-sm text-slate-300">
+      <div class="flex justify-between">
+        <span class="text-slate-400">ID</span>
+        <span>{{ selectedTransaction.id }}</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-slate-400">Account ID</span>
+        <span>{{ selectedTransaction.account_id }}</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-slate-400">Type</span>
+        <span class="uppercase">{{ selectedTransaction.type }}</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-slate-400">Amount</span>
+        <span>{{ selectedTransaction.amount | number: '1.2-2' }}</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-slate-400">Description</span>
+        <span>{{ selectedTransaction.description }}</span>
+      </div>
+      <div class="flex justify-between">
+        <span class="text-slate-400">Created</span>
+        <span>{{ selectedTransaction.created_at || '—' }}</span>
+      </div>
+    </div>
+  </app-card>
+</div>

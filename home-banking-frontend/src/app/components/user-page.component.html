@@ -1,0 +1,55 @@
+<section class="grid gap-6">
+  <app-card>
+    <h2 class="text-xl font-semibold text-white">User profile</h2>
+    <div *ngIf="user" class="mt-4 grid gap-2 text-sm text-slate-300 md:grid-cols-2">
+      <div>
+        <p class="text-slate-400">Name</p>
+        <p class="text-white">{{ user.name }} {{ user.surname }}</p>
+      </div>
+      <div>
+        <p class="text-slate-400">Email</p>
+        <p class="text-white">{{ user.email || '—' }}</p>
+      </div>
+      <div>
+        <p class="text-slate-400">Username</p>
+        <p class="text-white">{{ user.username || '—' }}</p>
+      </div>
+      <div>
+        <p class="text-slate-400">Role</p>
+        <p class="text-white">{{ user.is_admin ? 'Administrator' : 'Standard user' }}</p>
+      </div>
+    </div>
+  </app-card>
+
+  <app-card>
+    <div class="flex items-center justify-between">
+      <h2 class="text-xl font-semibold text-white">Accounts</h2>
+      <app-button variant="outline" size="sm" (click)="fetchAccounts()">Refresh</app-button>
+    </div>
+
+    <app-alert *ngIf="errorMessage" className="mt-4" type="error">
+      {{ errorMessage }}
+    </app-alert>
+
+    <div *ngIf="isLoading" class="mt-4 text-sm text-slate-400">Loading accounts...</div>
+
+    <div *ngIf="!isLoading" class="mt-4 grid gap-4 md:grid-cols-2">
+      <a
+        *ngFor="let account of accounts"
+        [routerLink]="['/accounts', account.id]"
+        class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 transition hover:border-emerald-500/60"
+      >
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-semibold text-white">Account #{{ account.id }}</h3>
+          <span class="rounded-full bg-emerald-500/10 px-3 py-1 text-xs uppercase text-emerald-200">
+            {{ account.currency }}
+          </span>
+        </div>
+        <p class="mt-3 text-sm text-slate-400">Balance</p>
+        <p class="text-xl font-semibold text-white">
+          {{ account.balance ?? 0 | number: '1.2-2' }} {{ account.currency }}
+        </p>
+      </a>
+    </div>
+  </app-card>
+</section>

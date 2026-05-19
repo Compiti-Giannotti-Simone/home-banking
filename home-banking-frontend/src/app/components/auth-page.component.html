@@ -1,0 +1,100 @@
+<div class="flex min-h-[70vh] items-center justify-center">
+  <app-card className="w-full max-w-3xl shadow-xl" padding="p-8">
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-semibold text-white">Welcome back</h1>
+        <p class="mt-1 text-sm text-slate-400">Access your accounts and manage transactions.</p>
+      </div>
+     
+    </div>
+
+    <div class="mt-6">
+      <app-alert *ngIf="errorMessage" className="mb-4" type="error">
+        {{ errorMessage }}
+      </app-alert>
+
+      <form *ngIf="mode === 'login'" class="grid gap-4" (ngSubmit)="submitLogin()">
+        <div class="grid gap-2">
+          <label class="text-sm text-slate-300">Username or email</label>
+          <input
+            type="text"
+            name="loginIdentifier"
+            [(ngModel)]="loginData.identifier"
+            class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white"
+            placeholder="your@email.com or username"
+            required
+          />
+        </div>
+        <div class="grid gap-2">
+          <label class="text-sm text-slate-300">Password</label>
+          <input
+            type="password"
+            name="loginPassword"
+            [(ngModel)]="loginData.password"
+            class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white"
+            required
+          />
+        </div>
+        <app-button type="submit" variant="success" className="mt-2" [disabled]="isLoading">
+          {{ isLoading ? 'Signing in...' : 'Login' }}
+        </app-button>
+      </form>
+
+      <form *ngIf="mode === 'register'" class="grid gap-4" (ngSubmit)="submitRegister()">
+        <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <div class="grid gap-2">
+            <label class="text-sm text-slate-300">Name</label>
+            <input
+              type="text"
+              name="registerName"
+              [(ngModel)]="registerData.name"
+              class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white"
+              required
+            />
+          </div>
+          <div class="grid gap-2">
+            <label class="text-sm text-slate-300">Surname</label>
+            <input
+              type="text"
+              name="registerSurname"
+              [(ngModel)]="registerData.surname"
+              class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white"
+              required
+            />
+          </div>
+        </div>
+        <div class="grid gap-2">
+          <label class="text-sm text-slate-300">Username</label>
+          <input
+            type="text"
+            name="registerUsername"
+            [(ngModel)]="registerData.username"
+            class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white"
+          />
+        </div>
+        <div class="grid gap-2">
+          <label class="text-sm text-slate-300">Email</label>
+          <input
+            type="email"
+            name="registerEmail"
+            [(ngModel)]="registerData.email"
+            class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white"
+          />
+        </div>
+        <div class="grid gap-2">
+          <label class="text-sm text-slate-300">Password</label>
+          <input
+            type="password"
+            name="registerPassword"
+            [(ngModel)]="registerData.password"
+            class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white"
+            required
+          />
+        </div>
+        <app-button type="submit" variant="primary" className="mt-2" [disabled]="isLoading">
+          {{ isLoading ? 'Creating account...' : 'Register' }}
+        </app-button>
+      </form>
+    </div>
+  </app-card>
+</div>
