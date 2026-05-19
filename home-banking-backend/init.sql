@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS `user` (
   `username` varchar(50) DEFAULT NULL,
   `email` varchar(255) DEFAULT NULL,
   `password_hash` varchar(255) NOT NULL,
+  `is_admin` tinyint(1) NOT NULL DEFAULT 0,
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`),
   UNIQUE KEY `uniq_user_username` (`username`),
@@ -24,11 +25,11 @@ CREATE TABLE IF NOT EXISTS `user` (
 -- Dumping data for table `user`
 --
 
-INSERT INTO `user` (`id`, `name`, `surname`, `username`, `email`, `password_hash`, `created_at`) VALUES
-(1, 'Paride', 'Ficiente', 'paride', 'paride@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '2026-04-27 06:38:25'),
-(2, 'Mimas', 'Turbo', 'mimas', 'mimas@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '2026-04-27 06:38:25'),
-(3, 'Musso', 'Leeni', 'musso', 'musso@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '2026-04-27 06:38:25'),
-(4, 'Lamin', 'Kiadura', 'lamin', 'lamin@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', '2026-04-27 06:38:25');
+INSERT INTO `user` (`id`, `name`, `surname`, `username`, `email`, `password_hash`, `is_admin`) VALUES
+(1, 'admin', 'nimda', 'admin', 'admin@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 1),
+(2, 'Mimas', 'Turbo', 'mimas', 'mimas@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 0),
+(3, 'Musso', 'Leeni', 'musso', 'musso@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 0),
+(4, 'Lamin', 'Kiadura', 'lamin', 'lamin@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 0);
 
 -- --------------------------------------------------------
 
@@ -49,11 +50,11 @@ CREATE TABLE IF NOT EXISTS `account` (
 -- Dumping data for table `account`
 --
 
-INSERT INTO `account` (`id`, `user_id`, `currency`, `created_at`) VALUES
-(1, 1, 'USD', '2026-04-27 06:38:25'),
-(2, 2, 'EUR', '2026-04-27 06:38:25'),
-(3, 3, 'USD', '2026-04-27 06:38:25'),
-(4, 4, 'YEN', '2026-04-27 06:38:25');
+INSERT INTO `account` (`id`, `user_id`, `currency`) VALUES
+(1, 1, 'USD'),
+(2, 2, 'EUR'),
+(3, 3, 'USD'),
+(4, 4, 'YEN');
 
 -- --------------------------------------------------------
 
@@ -76,14 +77,14 @@ CREATE TABLE IF NOT EXISTS `transaction` (
 -- Dumping data for table `transaction`
 --
 
-INSERT INTO `transaction` (`id`, `account_id`, `type`, `amount`, `description`, `created_at`) VALUES
-(1, 1, 'deposit', 500, 'Initial deposit', '2026-04-27 06:38:25'),
-(2, 1, 'withdrawal', 200, 'ATM withdrawal', '2026-04-27 06:38:25'),
-(3, 2, 'deposit', 500, 'Salary', '2026-04-27 06:38:25'),
-(4, 2, 'withdrawal', 150, 'Online purchase', '2026-04-27 06:38:25'),
-(5, 3, 'deposit', 100, 'Gift', '2026-04-27 06:38:25'),
-(6, 4, 'withdrawal', 350, 'Nigeriana', '2026-04-27 06:38:25'),
-(7, 4, 'withdrawal', 650, 'Neve', '2026-04-27 06:38:25');
+INSERT INTO `transaction` (`id`, `account_id`, `type`, `amount`, `description`) VALUES
+(1, 1, 'deposit', 500, 'Initial deposit'),
+(2, 1, 'withdrawal', 200, 'ATM withdrawal'),
+(3, 2, 'deposit', 500, 'Salary'),
+(4, 2, 'withdrawal', 150, 'Online purchase'),
+(5, 3, 'deposit', 100, 'Gift'),
+(6, 4, 'withdrawal', 350, 'Nigeriana'),
+(7, 4, 'withdrawal', 650, 'Neve');
 
 --
 -- Constraints for dumped tables
