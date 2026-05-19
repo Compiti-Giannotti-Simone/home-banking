@@ -13,48 +13,35 @@ $app = AppFactory::create();
 
 $app->addBodyParsingMiddleware();
 
-//Users API's
-$app->post('/users/register', 'UserController:register');
-$app->post('/users/login', 'UserController:login');
-$app->get('/users/me', 'UserController:getCurrentUser');
-$app->get('/users/me/accounts', 'UserController:getCurrentUserAccounts');
-$app->get('/users/{id}', 'UserController:getUserById');
-$app->get('/users/{id}/accounts', 'UserController:getUserAccountsById');
+//Authentication endpoints (available to all users)
+$app->post('/auth/register', 'UserController:register');
+$app->post('/auth/login', 'UserController:login');
+$app->post('/auth/logout', 'UserController:logout');
 
-//Admin Users API's
-$app->post('/admin/users', 'UserController:adminCreate');
+//User endpoints (for authenticated users only)
+$app->get('/users/me', 'UserController:getCurrentUserProfile');
+$app->get('/accounts', 'AccountController:getUserAccounts');
+$app->get('/accounts/{account}', 'AccountController:getUserAccountById');
+$app->post('/accounts', 'AccountController:createAccount');
+$app->post('/accounts/{account}/deposit', 'TransactionController:createDeposit');
+$app->post('/accounts/{account}/withdrawal', 'TransactionController:createWithdrawal');
+$app->get('/accounts/{account}/transactions', 'TransactionController:getAccountTransactions');
+$app->get('/accounts/{account}/transactions/{transactionId}', 'TransactionController:getAccountTransactionById');
+$app->get('/accounts/{account}/convert/fiat', 'ConversionController:toFiat');
+$app->get('/accounts/{account}/convert/crypto', 'ConversionController:toCrypto');
+
+//Admin endpoints (for administrators only)
+$app->get('/admin/users', 'UserController:getAllUsers');
+$app->get('/admin/users/{id}', 'UserController:getUserById');
 $app->put('/admin/users/{id}', 'UserController:adminUpdate');
 $app->delete('/admin/users/{id}', 'UserController:adminDelete');
 
-//Accounts API's
-$app->post('/users/me/accounts', 'AccountController:create');
-$app->get('/users/me/accounts/{account}', 'AccountController:getMyAccount');
-$app->delete('/users/me/accounts/{account}', 'AccountController:deleteMyAccount');
-$app->delete('/accounts/{account}', 'AccountController:deleteAccount');
-
-//Admin Accounts API's
-$app->post('/admin/accounts', 'AccountController:adminCreate');
-$app->post('/users/{id}/accounts', 'AccountController:adminCreate');
+$app->get('/admin/accounts', 'AccountController:getAllAccounts');
+$app->get('/admin/accounts/{account}', 'AccountController:getAccountById');
 $app->put('/admin/accounts/{account}', 'AccountController:adminUpdate');
 $app->delete('/admin/accounts/{account}', 'AccountController:adminDelete');
 
-//Transactions API's
-$app ->get('/accounts/{account}/transactions', 'TransactionController:allTransactions');
-$app ->get('/accounts/{account}/transactions/{transactionId}', 'TransactionController:getTransactionById');
-$app ->post('/accounts/{account}/deposit', 'TransactionController:createDeposit');
-$app ->post('/accounts/{account}/withdrawal', 'TransactionController:createWithdrawal');
-$app ->put('/accounts/{account}/transactions/{transactionId}', 'TransactionController:editDescription');
-$app ->delete('/accounts/{account}/transactions/{transactionId}', 'TransactionController:deleteTransaction');
-
-//Admin Transactions API's
-$app->post('/admin/transactions', 'TransactionController:adminCreate');
-$app->put('/admin/transactions/{transactionId}', 'TransactionController:adminUpdate');
-$app->delete('/admin/transactions/{transactionId}', 'TransactionController:adminDelete');
-
-$app ->get('/accounts/{account}/balance', 'TransactionController:getBalance');
-
-//Convertions API's
-$app ->get('/accounts/{account}/balance/convert/fiat', 'ConversionController:toFiat');
-$app ->get('/accounts/{account}/balance/convert/crypto', 'ConversionController:toCrypto');
+$app->put('/admin/transactions/{transactionId}', 'TransactionController:adminUpdateTransaction');
+$app->delete('/admin/transactions/{transactionId}', 'TransactionController:adminDeleteTransaction');
 
 $app->run();

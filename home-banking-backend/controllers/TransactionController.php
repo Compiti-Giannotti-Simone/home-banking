@@ -38,6 +38,12 @@ class TransactionController
         return 200;
     }
 
+    // GET /accounts/{account}/transactions
+    public function getAccountTransactions(Request $request, Response $response, $args)
+    {
+        return $this->allTransactions($request, $response, $args);
+    }
+
     //GET /accounts/account:id/transactions -- shows all transactions
     public function allTransactions(Request $request, Response $response, $args)
     {
@@ -48,7 +54,7 @@ class TransactionController
             return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
         }
 
-        $mysqli_connection = MysqlConnection::getInstance();
+        $mysqli = MysqlConnection::getInstance();
 
         // check auth
         $userId = $_SESSION['user_id'] ?? null;
@@ -58,7 +64,7 @@ class TransactionController
         }
 
         // check that account exists and belongs to user
-        $stmt = $mysqli_connection->prepare("SELECT 1 FROM `account` WHERE id = ? AND user_id = ? LIMIT 1");
+        $stmt = $mysqli->prepare("SELECT 1 FROM `account` WHERE id = ? AND user_id = ? LIMIT 1");
         if (! $stmt) {
             $response->getBody()->write(json_encode(['error' => 'Database error']));
             return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
@@ -73,7 +79,7 @@ class TransactionController
         }
 
         //fetch transactions
-        $stmt = $mysqli_connection->prepare("SELECT * FROM `transaction` WHERE account_id = ?");
+        $stmt = $mysqli->prepare("SELECT * FROM `transaction` WHERE account_id = ?");
         if (! $stmt) {
             $response->getBody()->write(json_encode(['error' => 'Database error']));
             $mysqli->close();
@@ -85,6 +91,12 @@ class TransactionController
         $results = $result->fetch_all();
         $response->getBody()->write(json_encode($results));
         return $response->withHeader("Content-type", "application/json")->withStatus(200);
+    }
+
+    // GET /accounts/{account}/transactions/{transactionId}
+    public function getAccountTransactionById(Request $request, Response $response, $args)
+    {
+        return $this->getTransactionById($request, $response, $args);
     }
 
     //GET /accounts/account:id/transactions/transaction:id -- gets the details of a single transaction
@@ -102,7 +114,7 @@ class TransactionController
             return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
         }
 
-        $mysqli_connection = MysqlConnection::getInstance();
+        $mysqli = MysqlConnection::getInstance();
 
         // check auth
         $userId = $_SESSION['user_id'] ?? null;
@@ -112,7 +124,7 @@ class TransactionController
         }
 
         // check that account exists and belongs to user
-        $stmt = $mysqli_connection->prepare("SELECT 1 FROM `account` WHERE id = ? AND user_id = ? LIMIT 1");
+        $stmt = $mysqli->prepare("SELECT 1 FROM `account` WHERE id = ? AND user_id = ? LIMIT 1");
         if (! $stmt) {
             $response->getBody()->write(json_encode(['error' => 'Database error']));
             return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
@@ -127,7 +139,7 @@ class TransactionController
         }
 
         //get transaction
-        $stmt = $mysqli_connection->prepare("SELECT * FROM `transaction` WHERE account_id = ? AND id = ?");
+        $stmt = $mysqli->prepare("SELECT * FROM `transaction` WHERE account_id = ? AND id = ?");
         if (! $stmt) {
             $response->getBody()->write(json_encode(['error' => 'Database error']));
             $mysqli->close();
@@ -171,7 +183,7 @@ class TransactionController
             return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
         }
 
-        $mysqli_connection = MysqlConnection::getInstance();
+        $mysqli = MysqlConnection::getInstance();
 
         // check auth
         $userId = $_SESSION['user_id'] ?? null;
@@ -181,7 +193,7 @@ class TransactionController
         }
 
         // check that account exists and belongs to user
-        $stmt = $mysqli_connection->prepare("SELECT 1 FROM `account` WHERE id = ? AND user_id = ? LIMIT 1");
+        $stmt = $mysqli->prepare("SELECT 1 FROM `account` WHERE id = ? AND user_id = ? LIMIT 1");
         if (! $stmt) {
             $response->getBody()->write(json_encode(['error' => 'Database error']));
             return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
@@ -196,13 +208,13 @@ class TransactionController
         }
 
         //create deposit
-        $stmt = $mysqli_connection->prepare("INSERT INTO `transaction` (`account_id`, `amount`, `description`, `type`) VALUES (?, ?, ?, 'deposit')");
+        $stmt = $mysqli->prepare("INSERT INTO `transaction` (`account_id`, `amount`, `description`, `type`) VALUES (?, ?, ?, 'deposit')");
         if (! $stmt) {
             $response->getBody()->write(json_encode(['error' => 'Database error']));
             $mysqli->close();
             return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
         }
-        $stmt->bind_param('iis', $accountId, $amount, $description);
+        $stmt->bind_param('ids', $accountId, $amount, $description);
         $stmt->execute();
         $response->getBody()->write(json_encode(['message' => 'deposit registered successfully']));
         return $response->withHeader("Content-type", "application/json")->withStatus(201);
@@ -234,7 +246,7 @@ class TransactionController
             return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
         }
 
-        $mysqli_connection = MysqlConnection::getInstance();
+        $mysqli = MysqlConnection::getInstance();
 
         // check auth
         $userId = $_SESSION['user_id'] ?? null;
@@ -244,7 +256,7 @@ class TransactionController
         }
 
         // check that account exists and belongs to user
-        $stmt = $mysqli_connection->prepare("SELECT 1 FROM `account` WHERE id = ? AND user_id = ? LIMIT 1");
+        $stmt = $mysqli->prepare("SELECT 1 FROM `account` WHERE id = ? AND user_id = ? LIMIT 1");
         if (! $stmt) {
             $response->getBody()->write(json_encode(['error' => 'Database error']));
             return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
@@ -259,10 +271,10 @@ class TransactionController
         }
 
         //fetch user balance
-        $stmt = $mysqli_connection->prepare("SELECT IFNULL((SELECT SUM(amount) FROM `transaction` WHERE account_id = ? AND `type` = 'deposit'),0)  - IFNULL((SELECT SUM(amount) FROM `transaction` WHERE account_id = ? AND `type` = 'withdrawal'),0) as balance");
+        $stmt = $mysqli->prepare("SELECT IFNULL((SELECT SUM(amount) FROM `transaction` WHERE account_id = ? AND `type` = 'deposit'),0)  - IFNULL((SELECT SUM(amount) FROM `transaction` WHERE account_id = ? AND `type` = 'withdrawal'),0) as balance");
         if (! $stmt) {
             $response->getBody()->write(json_encode(['error' => 'Database error']));
-            $mysqli_connection->close();
+            $mysqli->close();
             return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
         }
         $stmt->bind_param('ii', $accountId, $accountId);
@@ -278,13 +290,13 @@ class TransactionController
         }
 
         //create withdrawal
-        $stmt = $mysqli_connection->prepare("INSERT INTO `transaction` (`account_id`, `amount`, `description`, `type`) VALUES (?, ?, ?, 'withdrawal')");
+        $stmt = $mysqli->prepare("INSERT INTO `transaction` (`account_id`, `amount`, `description`, `type`) VALUES (?, ?, ?, 'withdrawal')");
         if (! $stmt) {
             $response->getBody()->write(json_encode(['error' => 'Database error']));
             $mysqli->close();
             return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
         }
-        $stmt->bind_param('iis', $accountId, $amount, $description);
+        $stmt->bind_param('ids', $accountId, $amount, $description);
         $stmt->execute();
         $response->getBody()->write(json_encode(['message' => 'withdrawal registered successfully']));
         return $response->withHeader("Content-type", "application/json")->withStatus(201);
@@ -308,7 +320,7 @@ class TransactionController
             return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
         }
 
-        $mysqli_connection = MysqlConnection::getInstance();
+        $mysqli = MysqlConnection::getInstance();
 
         // check auth
         $userId = $_SESSION['user_id'] ?? null;
@@ -318,7 +330,7 @@ class TransactionController
         }
 
         // check that account exists and belongs to user
-        $stmt = $mysqli_connection->prepare("SELECT 1 FROM `account` WHERE id = ? AND user_id = ? LIMIT 1");
+        $stmt = $mysqli->prepare("SELECT 1 FROM `account` WHERE id = ? AND user_id = ? LIMIT 1");
         if (! $stmt) {
             $response->getBody()->write(json_encode(['error' => 'Database error']));
             return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
@@ -333,7 +345,7 @@ class TransactionController
         }
 
         // check that transaction exists
-        $stmt = $mysqli_connection->prepare("SELECT 1 FROM `transaction` WHERE account_id = ? AND id = ? LIMIT 1");
+        $stmt = $mysqli->prepare("SELECT 1 FROM `transaction` WHERE account_id = ? AND id = ? LIMIT 1");
         if (! $stmt) {
             $response->getBody()->write(json_encode(['error' => 'Database error']));
             $mysqli->close();
@@ -349,7 +361,7 @@ class TransactionController
         }
 
         //update transaction
-        $stmt = $mysqli_connection->prepare("UPDATE `transaction` SET `description` = ? WHERE account_id = ? AND id = ?");
+        $stmt = $mysqli->prepare("UPDATE `transaction` SET `description` = ? WHERE account_id = ? AND id = ?");
         if (! $stmt) {
             $response->getBody()->write(json_encode(['error' => 'Database error']));
             $mysqli->close();
@@ -376,7 +388,7 @@ class TransactionController
             return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
         }
 
-        $mysqli_connection = MysqlConnection::getInstance();
+        $mysqli = MysqlConnection::getInstance();
 
         // check auth
         $userId = $_SESSION['user_id'] ?? null;
@@ -386,7 +398,7 @@ class TransactionController
         }
 
         // check that account exists and belongs to user
-        $stmt = $mysqli_connection->prepare("SELECT 1 FROM `account` WHERE id = ? AND user_id = ? LIMIT 1");
+        $stmt = $mysqli->prepare("SELECT 1 FROM `account` WHERE id = ? AND user_id = ? LIMIT 1");
         if (! $stmt) {
             $response->getBody()->write(json_encode(['error' => 'Database error']));
             return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
@@ -401,7 +413,7 @@ class TransactionController
         }
 
         // check that transaction exists
-        $stmt = $mysqli_connection->prepare("SELECT 1 FROM `transaction` WHERE account_id = ? AND id = ? LIMIT 1");
+        $stmt = $mysqli->prepare("SELECT 1 FROM `transaction` WHERE account_id = ? AND id = ? LIMIT 1");
         if (! $stmt) {
             $response->getBody()->write(json_encode(['error' => 'Database error']));
             $mysqli->close();
@@ -417,7 +429,7 @@ class TransactionController
         }
 
         //check if transaction to delete is last in history
-        $stmt = $mysqli_connection->prepare("SELECT id FROM `transaction` WHERE account_id = ? ORDER BY id DESC LIMIT 1");
+        $stmt = $mysqli->prepare("SELECT id FROM `transaction` WHERE account_id = ? ORDER BY id DESC LIMIT 1");
         if (! $stmt) {
             $response->getBody()->write(json_encode(['error' => 'Database error']));
             $mysqli->close();
@@ -433,7 +445,7 @@ class TransactionController
         }
 
         //delete transaction
-        $stmt = $mysqli_connection->prepare("DELETE FROM `transaction` WHERE account_id = ? AND id = ?");
+        $stmt = $mysqli->prepare("DELETE FROM `transaction` WHERE account_id = ? AND id = ?");
         if (! $stmt) {
             $response->getBody()->write(json_encode(['error' => 'Database error']));
             $mysqli->close();
@@ -443,6 +455,158 @@ class TransactionController
         $stmt->execute();
         $response->getBody()->write(json_encode(['message' => 'transaction deleted successfully']));
         return $response->withHeader("Content-type", "application/json")->withStatus(200);
+    }
+
+    // PUT /admin/transactions/{transactionId}
+    public function adminUpdateTransaction(Request $request, Response $response, $args)
+    {
+        $transactionId = $args['transactionId'] ?? '';
+        if (! is_numeric($transactionId) || $transactionId === '') {
+            $response->getBody()->write(json_encode(['error' => 'Invalid or missing transaction id']));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
+        }
+
+        $status = $this->ensureAdmin($response);
+        if ($status !== 200) {
+            return $response->withHeader('Content-Type', 'application/json')->withStatus($status);
+        }
+
+        $data        = $request->getParsedBody();
+        $amount      = isset($data['amount']) ? $data['amount'] : null;
+        $description = isset($data['description']) ? trim($data['description']) : null;
+        $type        = isset($data['type']) ? strtolower(trim($data['type'])) : null;
+        $accountId   = isset($data['account_id']) ? $data['account_id'] : null;
+
+        $fields = [];
+        $types  = '';
+        $params = [];
+
+        if ($amount !== null) {
+            if (! is_numeric($amount) || (float) $amount <= 0) {
+                $response->getBody()->write(json_encode(['error' => 'Amount must be greater than zero']));
+                return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
+            }
+            $fields[] = '`amount` = ?';
+            $types   .= 'd';
+            $params[] = (float) $amount;
+        }
+
+        if ($description !== null) {
+            if ($description === '') {
+                $response->getBody()->write(json_encode(['error' => 'Missing description']));
+                return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
+            }
+            $fields[] = '`description` = ?';
+            $types   .= 's';
+            $params[] = $description;
+        }
+
+        if ($type !== null) {
+            if (! in_array($type, ['deposit', 'withdrawal'], true)) {
+                $response->getBody()->write(json_encode(['error' => 'Invalid transaction type']));
+                return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
+            }
+            $fields[] = '`type` = ?';
+            $types   .= 's';
+            $params[] = $type;
+        }
+
+        if ($accountId !== null) {
+            if (! is_numeric($accountId) || $accountId === '') {
+                $response->getBody()->write(json_encode(['error' => 'Invalid account id']));
+                return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
+            }
+            $fields[] = '`account_id` = ?';
+            $types   .= 'i';
+            $params[] = (int) $accountId;
+        }
+
+        if (count($fields) === 0) {
+            $response->getBody()->write(json_encode(['error' => 'No fields to update']));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
+        }
+
+        $mysqli = MysqlConnection::getInstance();
+
+        if ($accountId !== null) {
+            $stmt = $mysqli->prepare("SELECT 1 FROM `account` WHERE id = ? LIMIT 1");
+            if (! $stmt) {
+                $response->getBody()->write(json_encode(['error' => 'Database error']));
+                return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
+            }
+            $stmt->bind_param('i', $accountId);
+            $stmt->execute();
+            $accountExists = $stmt->get_result()->fetch_assoc();
+            $stmt->close();
+            if (! $accountExists) {
+                $response->getBody()->write(json_encode(['error' => 'Account not found']));
+                return $response->withHeader('Content-Type', 'application/json')->withStatus(404);
+            }
+        }
+
+        $stmt = $mysqli->prepare("SELECT 1 FROM `transaction` WHERE id = ? LIMIT 1");
+        if (! $stmt) {
+            $response->getBody()->write(json_encode(['error' => 'Database error']));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
+        }
+        $stmt->bind_param('i', $transactionId);
+        $stmt->execute();
+        $exists = $stmt->get_result()->fetch_assoc();
+        $stmt->close();
+        if (! $exists) {
+            $response->getBody()->write(json_encode(['error' => 'transaction not found']));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(404);
+        }
+
+        $types .= 'i';
+        $params[] = (int) $transactionId;
+        $sql = 'UPDATE `transaction` SET ' . implode(', ', $fields) . ' WHERE id = ?';
+
+        $stmt = $mysqli->prepare($sql);
+        if (! $stmt) {
+            $response->getBody()->write(json_encode(['error' => 'Database error']));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
+        }
+        $stmt->bind_param($types, ...$params);
+        $stmt->execute();
+        $stmt->close();
+
+        $response->getBody()->write(json_encode(['message' => 'Transaction updated']));
+        return $response->withHeader('Content-Type', 'application/json')->withStatus(200);
+    }
+
+    // DELETE /admin/transactions/{transactionId}
+    public function adminDeleteTransaction(Request $request, Response $response, $args)
+    {
+        $transactionId = $args['transactionId'] ?? '';
+        if (! is_numeric($transactionId) || $transactionId === '') {
+            $response->getBody()->write(json_encode(['error' => 'Invalid or missing transaction id']));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
+        }
+
+        $status = $this->ensureAdmin($response);
+        if ($status !== 200) {
+            return $response->withHeader('Content-Type', 'application/json')->withStatus($status);
+        }
+
+        $mysqli = MysqlConnection::getInstance();
+        $stmt = $mysqli->prepare("DELETE FROM `transaction` WHERE id = ?");
+        if (! $stmt) {
+            $response->getBody()->write(json_encode(['error' => 'Database error']));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
+        }
+        $stmt->bind_param('i', $transactionId);
+        $stmt->execute();
+        $affected = $stmt->affected_rows;
+        $stmt->close();
+
+        if ($affected === 0) {
+            $response->getBody()->write(json_encode(['error' => 'transaction not found']));
+            return $response->withHeader('Content-Type', 'application/json')->withStatus(404);
+        }
+
+        $response->getBody()->write(json_encode(['message' => 'Transaction deleted']));
+        return $response->withHeader('Content-Type', 'application/json')->withStatus(200);
     }
 
     //GET /accounts/account:id/balance -- to get the balance of a specified account
@@ -455,7 +619,7 @@ class TransactionController
             return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
         }
 
-        $mysqli_connection = MysqlConnection::getInstance();
+        $mysqli = MysqlConnection::getInstance();
 
         // check auth
         $userId = $_SESSION['user_id'] ?? null;
@@ -465,7 +629,7 @@ class TransactionController
         }
 
         // check that account exists and belongs to user
-        $stmt = $mysqli_connection->prepare("SELECT 1 FROM `account` WHERE id = ? AND user_id = ? LIMIT 1");
+        $stmt = $mysqli->prepare("SELECT 1 FROM `account` WHERE id = ? AND user_id = ? LIMIT 1");
         if (! $stmt) {
             $response->getBody()->write(json_encode(['error' => 'Database error']));
             return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
@@ -480,7 +644,7 @@ class TransactionController
         }
 
         //calculate balance from transactions
-        $stmt = $mysqli_connection->prepare("SELECT IFNULL((SELECT SUM(amount) as withdrawals FROM `transaction` WHERE account_id = ? AND `type` = 'deposit'),0)  - IFNULL((SELECT SUM(amount) as withdrawals FROM `transaction` WHERE account_id = ? AND `type` = 'withdrawal'),0) as balance");
+        $stmt = $mysqli->prepare("SELECT IFNULL((SELECT SUM(amount) as withdrawals FROM `transaction` WHERE account_id = ? AND `type` = 'deposit'),0)  - IFNULL((SELECT SUM(amount) as withdrawals FROM `transaction` WHERE account_id = ? AND `type` = 'withdrawal'),0) as balance");
         if (! $stmt) {
             $response->getBody()->write(json_encode(['error' => 'Database error']));
             $mysqli->close();
