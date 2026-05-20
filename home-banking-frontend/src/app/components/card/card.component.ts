@@ -1,22 +1,21 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input } from '@angular/core';
+import { Component, Input, HostBinding } from '@angular/core';
 
 @Component({
   selector: 'app-card',
   standalone: true,
   imports: [CommonModule],
-  template: `
-    <div [ngClass]="classes">
-      <ng-content></ng-content>
-    </div>
-  `
+  templateUrl: './card.component.html',
+  host: {
+    '[class]': 'classes'
+  }
 })
 export class CardComponent {
   @Input() padding = 'p-6';
-  @Input() className = '';
+  @Input() class = '';
 
   get classes() {
-    const base = 'rounded-2xl border border-slate-800 bg-slate-900/70';
-    return [base, this.padding, this.className];
+    const base = 'block rounded-2xl border border-slate-800 bg-slate-900/70';
+    return [base, this.padding, this.class].filter(Boolean).join(' ');
   }
 }

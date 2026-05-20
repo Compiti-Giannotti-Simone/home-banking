@@ -161,21 +161,21 @@ class UserController
         $mysqli = MysqlConnection::getInstance();
 
         if ($username !== '' && $email !== '') {
-            $stmt = $mysqli->prepare("SELECT id, name, surname, username, email, profile_picture_url, password_hash, is_admin FROM `user` WHERE username = ? OR email = ? LIMIT 1");
+            $stmt = $mysqli->prepare("SELECT id, name, surname, username, email, password_hash, is_admin FROM `user` WHERE username = ? OR email = ? LIMIT 1");
             if (! $stmt) {
                 $response->getBody()->write(json_encode(['error' => 'Database error']));
                 return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
             }
             $stmt->bind_param('ss', $username, $email);
         } elseif ($username !== '') {
-            $stmt = $mysqli->prepare("SELECT id, name, surname, username, email, profile_picture_url, password_hash, is_admin FROM `user` WHERE username = ? LIMIT 1");
+            $stmt = $mysqli->prepare("SELECT id, name, surname, username, email, password_hash, is_admin FROM `user` WHERE username = ? LIMIT 1");
             if (! $stmt) {
                 $response->getBody()->write(json_encode(['error' => 'Database error']));
                 return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
             }
             $stmt->bind_param('s', $username);
         } else {
-            $stmt = $mysqli->prepare("SELECT id, name, surname, username, email, profile_picture_url, password_hash, is_admin FROM `user` WHERE email = ? LIMIT 1");
+            $stmt = $mysqli->prepare("SELECT id, name, surname, username, email, password_hash, is_admin FROM `user` WHERE email = ? LIMIT 1");
             if (! $stmt) {
                 $response->getBody()->write(json_encode(['error' => 'Database error']));
                 return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
@@ -211,7 +211,6 @@ class UserController
             'surname'  => $user['surname'],
             'username' => $user['username'],
             'email'    => $user['email'],
-            'profile_picture_url' => $user['profile_picture_url'] ?? null,
             'accounts' => $accounts,
             'is_admin' => (bool) ($user['is_admin'] ?? 0),
         ];
@@ -243,7 +242,7 @@ class UserController
 
         $mysqli = MysqlConnection::getInstance();
 
-        $stmt = $mysqli->prepare("SELECT id, name, surname, username, email, profile_picture_url, is_admin, created_at FROM `user` WHERE id = ? LIMIT 1");
+        $stmt = $mysqli->prepare("SELECT id, name, surname, username, email, is_admin, created_at FROM `user` WHERE id = ? LIMIT 1");
         if (! $stmt) {
             $response->getBody()->write(json_encode(['error' => 'Database error']));
             return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
@@ -345,7 +344,7 @@ class UserController
         }
 
         $mysqli = MysqlConnection::getInstance();
-        $stmt = $mysqli->prepare("SELECT id, name, surname, username, email, profile_picture_url, is_admin, created_at FROM `user` ORDER BY id ASC");
+        $stmt = $mysqli->prepare("SELECT id, name, surname, username, email, is_admin, created_at FROM `user` ORDER BY id ASC");
         if (! $stmt) {
             $response->getBody()->write(json_encode(['error' => 'Database error']));
             return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
@@ -356,145 +355,6 @@ class UserController
 
         $response->getBody()->write(json_encode(['users' => $users]));
         return $response->withHeader('Content-Type', 'application/json')->withStatus(200);
-    }
-
-    // GET /admin/users/{id}
-    public function getUserById(Request $request, Response $response, $args)
-    {
-        $targetId = $args['id'] ?? '';
-        if (! is_numeric($targetId) || $targetId === '') {
-            $response->getBody()->write(json_encode(['error' => 'Invalid or missing user id']));
-            return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
-        }
-
-        $status = $this->ensureAdmin($response);
-        if ($status !== 200) {
-            return $response->withHeader('Content-Type', 'application/json')->withStatus($status);
-        }
-
-        $mysqli = MysqlConnection::getInstance();
-
-        $stmt = $mysqli->prepare("SELECT id, name, surname, username, email, profile_picture_url, is_admin, created_at FROM `user` WHERE id = ? LIMIT 1");
-        if (! $stmt) {
-            $response->getBody()->write(json_encode(['error' => 'Database error']));
-            return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
-        }
-        $stmt->bind_param('i', $targetId);
-        $stmt->execute();
-        $user = $stmt->get_result()->fetch_assoc();
-        $stmt->close();
-
-        if (! $user) {
-            $response->getBody()->write(json_encode(['error' => 'User not found']));
-            return $response->withHeader('Content-Type', 'application/json')->withStatus(404);
-        }
-
-        $stmt = $mysqli->prepare("SELECT id, currency, created_at FROM `account` WHERE user_id = ? ORDER BY id ASC");
-        if (! $stmt) {
-            $response->getBody()->write(json_encode(['error' => 'Database error']));
-            return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
-        }
-        $stmt->bind_param('i', $targetId);
-        $stmt->execute();
-        $accounts = $stmt->get_result()->fetch_all(MYSQLI_ASSOC);
-        $stmt->close();
-
-        $payload = [
-            'user'     => $user,
-            'accounts' => $accounts,
-        ];
-
-        $response->getBody()->write(json_encode($payload));
-        return $response->withHeader('Content-Type', 'application/json')->withStatus(200);
-    }
-
-    // POST /admin/users
-    public function adminCreate(Request $request, Response $response)
-    {
-        $status = $this->ensureAdmin($response);
-        if ($status !== 200) {
-            return $response->withHeader('Content-Type', 'application/json')->withStatus($status);
-        }
-
-        $data     = $request->getParsedBody();
-        $name     = isset($data['name']) ? trim($data['name']) : '';
-        $surname  = isset($data['surname']) ? trim($data['surname']) : '';
-        $username = isset($data['username']) ? trim($data['username']) : '';
-        $email    = isset($data['email']) ? trim($data['email']) : '';
-        $password = isset($data['password']) ? $data['password'] : '';
-        $isAdmin  = isset($data['is_admin']) ? (int) $data['is_admin'] : 0;
-
-        if ($name === '' || $surname === '') {
-            $response->getBody()->write(json_encode(['error' => 'Missing name or surname']));
-            return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
-        }
-        if ($username === '' && $email === '') {
-            $response->getBody()->write(json_encode(['error' => 'Provide a username or email']));
-            return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
-        }
-        if ($email !== '' && ! filter_var($email, FILTER_VALIDATE_EMAIL)) {
-            $response->getBody()->write(json_encode(['error' => 'Invalid email address']));
-            return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
-        }
-        if ($password === '') {
-            $response->getBody()->write(json_encode(['error' => 'Missing password']));
-            return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
-        }
-
-        $mysqli = MysqlConnection::getInstance();
-
-        if ($username !== '' || $email !== '') {
-            if ($username !== '' && $email !== '') {
-                $stmt = $mysqli->prepare("SELECT 1 FROM `user` WHERE username = ? OR email = ? LIMIT 1");
-                if (! $stmt) {
-                    $response->getBody()->write(json_encode(['error' => 'Database error']));
-                    return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
-                }
-                $stmt->bind_param('ss', $username, $email);
-            } elseif ($username !== '') {
-                $stmt = $mysqli->prepare("SELECT 1 FROM `user` WHERE username = ? LIMIT 1");
-                if (! $stmt) {
-                    $response->getBody()->write(json_encode(['error' => 'Database error']));
-                    return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
-                }
-                $stmt->bind_param('s', $username);
-            } else {
-                $stmt = $mysqli->prepare("SELECT 1 FROM `user` WHERE email = ? LIMIT 1");
-                if (! $stmt) {
-                    $response->getBody()->write(json_encode(['error' => 'Database error']));
-                    return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
-                }
-                $stmt->bind_param('s', $email);
-            }
-
-            $stmt->execute();
-            $exists = $stmt->get_result()->fetch_assoc();
-            $stmt->close();
-
-            if ($exists) {
-                $response->getBody()->write(json_encode(['error' => 'Username or email already in use']));
-                return $response->withHeader('Content-Type', 'application/json')->withStatus(409);
-            }
-        }
-
-        $passwordHash = password_hash($password, PASSWORD_DEFAULT);
-        if ($passwordHash === false) {
-            $response->getBody()->write(json_encode(['error' => 'Password hashing failed']));
-            return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
-        }
-
-        $stmt = $mysqli->prepare("INSERT INTO `user` (`name`, `surname`, `username`, `email`, `password_hash`, `is_admin`) VALUES (?, ?, ?, ?, ?, ?)");
-        if (! $stmt) {
-            $response->getBody()->write(json_encode(['error' => 'Database error']));
-            return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
-        }
-        $stmt->bind_param('sssssi', $name, $surname, $username, $email, $passwordHash, $isAdmin);
-        $stmt->execute();
-        $userId = $stmt->insert_id;
-        $stmt->close();
-
-        $response->getBody()->write(json_encode(['message' => 'User created', 'user_id' => $userId]));
-        return $response->withHeader('Content-Type', 'application/json')->withStatus(201);
     }
 
     // PUT /admin/users/{id}
@@ -516,7 +376,6 @@ class UserController
         $surname  = isset($data['surname']) ? trim($data['surname']) : null;
         $username = isset($data['username']) ? trim($data['username']) : null;
         $email    = isset($data['email']) ? trim($data['email']) : null;
-        $profilePictureUrl = isset($data['profile_picture_url']) ? trim($data['profile_picture_url']) : null;
         $password = isset($data['password']) ? $data['password'] : null;
         $isAdmin  = isset($data['is_admin']) ? (int) $data['is_admin'] : null;
 
@@ -548,11 +407,6 @@ class UserController
             $fields[] = '`email` = ?';
             $types   .= 's';
             $params[] = $email;
-        }
-        if ($profilePictureUrl !== null) {
-            $fields[] = '`profile_picture_url` = ?';
-            $types   .= 's';
-            $params[] = $profilePictureUrl === '' ? null : $profilePictureUrl;
         }
         if ($password !== null && $password !== '') {
             $passwordHash = password_hash($password, PASSWORD_DEFAULT);

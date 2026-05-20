@@ -13,7 +13,6 @@ CREATE TABLE IF NOT EXISTS `user` (
   `surname` varchar(20) NOT NULL,
   `username` varchar(50) DEFAULT NULL,
   `email` varchar(255) DEFAULT NULL,
-  `profile_picture_url` varchar(255) DEFAULT NULL,
   `password_hash` varchar(255) NOT NULL,
   `is_admin` tinyint(1) NOT NULL DEFAULT 0,
   `created_at` datetime NOT NULL DEFAULT current_timestamp(),
@@ -26,11 +25,11 @@ CREATE TABLE IF NOT EXISTS `user` (
 -- Dumping data for table `user`
 --
 
-INSERT INTO `user` (`id`, `name`, `surname`, `username`, `email`, `profile_picture_url`, `password_hash`, `is_admin`) VALUES
-(1, 'admin', 'nimda', 'admin', 'admin@example.com', NULL, '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 1),
-(2, 'Emma', 'Johnson', 'emma.j', 'emma.johnson@example.com', NULL, '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 0),
-(3, 'Lucas', 'Martinez', 'lucas.m', 'lucas.martinez@example.com', NULL, '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 0),
-(4, 'Ava', 'Patel', 'ava.p', 'ava.patel@example.com', NULL, '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 0);
+INSERT INTO `user` (`id`, `name`, `surname`, `username`, `email`, `password_hash`, `is_admin`) VALUES
+(1, 'admin', 'nimda', 'admin', 'admin@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 1),
+(2, 'Emma', 'Johnson', 'emma.j', 'emma.johnson@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 0),
+(3, 'Lucas', 'Martinez', 'lucas.m', 'lucas.martinez@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 0),
+(4, 'Ava', 'Patel', 'ava.p', 'ava.patel@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 0);
 
 -- --------------------------------------------------------
 

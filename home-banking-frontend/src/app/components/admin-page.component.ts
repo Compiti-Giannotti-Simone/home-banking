@@ -1,11 +1,13 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { AlertComponent } from './alert/alert.component';
 import { ButtonComponent } from './button/button.component';
 import { CardComponent } from './card/card.component';
-import { Account, Transaction, User } from '../models';
 import { AdminService } from '../services/admin.service';
+import { User } from '../interfaces/user';
+import { Account } from '../interfaces/account';
+import { Transaction } from '../interfaces/transaction';  
 
 @Component({
   selector: 'app-admin-page',
@@ -14,12 +16,12 @@ import { AdminService } from '../services/admin.service';
   templateUrl: './admin-page.component.html'
 })
 export class AdminPageComponent implements OnInit {
-  users: User[] = [];
-  accounts: Account[] = [];
-  transactionForm: Partial<Transaction> & { transactionId?: number; account_id?: number } = {};
-  errorMessage = '';
-  successMessage = '';
-  isLoading = true;
+  users = signal<User[]>([]);
+  accounts = signal<Account[]>([]);
+  transactionForm = signal<Partial<Transaction> & { transactionId?: number; account_id?: number }>({});
+  errorMessage = signal('');
+  successMessage = signal('');
+  isLoading = signal(true);
 
   constructor(private adminService: AdminService) {}
 
@@ -28,27 +30,27 @@ export class AdminPageComponent implements OnInit {
   }
 
   refresh() {
-    this.errorMessage = '';
-    this.successMessage = '';
-    this.isLoading = true;
+    this.errorMessage.set('');
+    this.successMessage.set('');
+    this.isLoading.set(true);
 
     this.adminService.getUsers().subscribe({
       next: (response: { users: User[] }) => {
-        this.users = response.users;
+        this.users.set(response.users);
       },
       error: (error: any) => {
-        this.errorMessage = error?.error?.error ?? 'Unable to load admin data.';
+        this.errorMessage.set(error?.error?.error ?? 'Unable to load admin data.');
       }
     });
 
     this.adminService.getAccounts().subscribe({
       next: (response: { accounts: Account[] }) => {
-        this.accounts = response.accounts;
-        this.isLoading = false;
+        this.accounts.set(response.accounts);
+        this.isLoading.set(false);
       },
       error: (error: any) => {
-        this.errorMessage = error?.error?.error ?? 'Unable to load accounts.';
-        this.isLoading = false;
+        this.errorMessage.set(error?.error?.error ?? 'Unable to load accounts.');
+        this.isLoading.set(false);
       }
     });
   }
@@ -64,10 +66,10 @@ export class AdminPageComponent implements OnInit {
       })
       .subscribe({
         next: () => {
-          this.successMessage = 'User updated.';
+          this.successMessage.set('User updated.');
         },
         error: (error: any) => {
-          this.errorMessage = error?.error?.error ?? 'Failed to update user.';
+          this.errorMessage.set(error?.error?.error ?? 'Failed to update user.');
         }
       });
   }
@@ -75,11 +77,11 @@ export class AdminPageComponent implements OnInit {
   deleteUser(user: User) {
     this.adminService.deleteUser(user.id).subscribe({
       next: () => {
-        this.users = this.users.filter((item) => item.id !== user.id);
-        this.successMessage = 'User deleted.';
+        this.users.update((items) => items.filter((item) => item.id !== user.id));
+        this.successMessage.set('User deleted.');
       },
       error: (error: any) => {
-        this.errorMessage = error?.error?.error ?? 'Failed to delete user.';
+        this.errorMessage.set(error?.error?.error ?? 'Failed to delete user.');
       }
     });
   }
@@ -92,10 +94,10 @@ export class AdminPageComponent implements OnInit {
       })
       .subscribe({
         next: () => {
-          this.successMessage = 'Account updated.';
+          this.successMessage.set('Account updated.');
         },
         error: (error: any) => {
-          this.errorMessage = error?.error?.error ?? 'Failed to update account.';
+          this.errorMessage.set(error?.error?.error ?? 'Failed to update account.');
         }
       });
   }
@@ -103,51 +105,109 @@ export class AdminPageComponent implements OnInit {
   deleteAccount(account: Account) {
     this.adminService.deleteAccount(account.id).subscribe({
       next: () => {
-        this.accounts = this.accounts.filter((item) => item.id !== account.id);
-        this.successMessage = 'Account deleted.';
+        this.accounts.update((items) => items.filter((item) => item.id !== account.id));
+        this.successMessage.set('Account deleted.');
       },
       error: (error: any) => {
-        this.errorMessage = error?.error?.error ?? 'Failed to delete account.';
+        this.errorMessage.set(error?.error?.error ?? 'Failed to delete account.');
       }
     });
   }
 
   updateTransaction() {
-    if (!this.transactionForm.transactionId) {
-      this.errorMessage = 'Transaction ID is required.';
+    const transactionId = this.transactionId;
+    if (!transactionId) {
+      this.errorMessage.set('Transaction ID is required.');
       return;
     }
 
+    const transactionForm = this.transactionForm();
     this.adminService
-      .updateTransaction(this.transactionForm.transactionId, {
-        amount: this.transactionForm.amount,
-        description: this.transactionForm.description,
-        type: this.transactionForm.type as Transaction['type'],
-        account_id: this.transactionForm.account_id
+      .updateTransaction(transactionId, {
+        amount: transactionForm.amount,
+        description: transactionForm.description,
+        type: transactionForm.type as Transaction['type'],
+        account_id: transactionForm.account_id
       })
       .subscribe({
         next: () => {
-          this.successMessage = 'Transaction updated.';
+          this.successMessage.set('Transaction updated.');
         },
         error: (error: any) => {
-          this.errorMessage = error?.error?.error ?? 'Failed to update transaction.';
+          this.errorMessage.set(error?.error?.error ?? 'Failed to update transaction.');
         }
       });
   }
 
   deleteTransaction() {
-    if (!this.transactionForm.transactionId) {
-      this.errorMessage = 'Transaction ID is required.';
+    const transactionId = this.transactionId;
+    if (!transactionId) {
+      this.errorMessage.set('Transaction ID is required.');
       return;
     }
 
-    this.adminService.deleteTransaction(this.transactionForm.transactionId).subscribe({
+    this.adminService.deleteTransaction(transactionId).subscribe({
       next: () => {
-        this.successMessage = 'Transaction deleted.';
+        this.successMessage.set('Transaction deleted.');
       },
       error: (error: any) => {
-        this.errorMessage = error?.error?.error ?? 'Failed to delete transaction.';
+        this.errorMessage.set(error?.error?.error ?? 'Failed to delete transaction.');
       }
     });
+  }
+
+  get transactionId() {
+    return this.transactionForm().transactionId;
+  }
+
+  set transactionId(value: number | null | undefined) {
+    this.transactionForm.update((form) => ({
+      ...form,
+      transactionId: value ?? undefined
+    }));
+  }
+
+  get transactionAccountId() {
+    return this.transactionForm().account_id;
+  }
+
+  set transactionAccountId(value: number | null | undefined) {
+    this.transactionForm.update((form) => ({
+      ...form,
+      account_id: value ?? undefined
+    }));
+  }
+
+  get transactionAmount() {
+    return this.transactionForm().amount;
+  }
+
+  set transactionAmount(value: number | null | undefined) {
+    this.transactionForm.update((form) => ({
+      ...form,
+      amount: value ?? undefined
+    }));
+  }
+
+  get transactionType() {
+    return this.transactionForm().type ?? '';
+  }
+
+  set transactionType(value: string) {
+    this.transactionForm.update((form) => ({
+      ...form,
+      type: value as Transaction['type']
+    }));
+  }
+
+  get transactionDescription() {
+    return this.transactionForm().description ?? '';
+  }
+
+  set transactionDescription(value: string) {
+    this.transactionForm.update((form) => ({
+      ...form,
+      description: value
+    }));
   }
 }

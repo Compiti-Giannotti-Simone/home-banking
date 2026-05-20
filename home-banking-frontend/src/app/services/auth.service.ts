@@ -1,7 +1,9 @@
 import { Injectable, computed, signal } from '@angular/core';
 import { catchError, map, of, switchMap, tap } from 'rxjs';
 import { ApiService } from './api.service';
-import { Account, LoginResponse, User } from '../models';
+import { Account } from '../interfaces/account';
+import { User } from '../interfaces/user';
+import { registerData } from '../interfaces/registerData';
 
 interface CurrentUserResponse {
   user: User;
@@ -33,22 +35,21 @@ export class AuthService {
   }
 
   login(payload: { identifier: string; password: string }) {
-    return this.api.post<LoginResponse>('/auth/login', payload).pipe(
-      tap((response: LoginResponse) => {
+    return this.api.post<User>('/auth/login', payload).pipe(
+      tap((response: User) => {
         this.userSignal.set({
-          id: response.user_id,
+          id: response.id,
           name: response.name,
           surname: response.surname,
           username: response.username,
           email: response.email,
-          profile_picture_url: response.profile_picture_url ?? null,
           is_admin: response.is_admin
         });
       })
     );
   }
 
-  register(payload: { name: string; surname: string; username?: string; email?: string; password: string }) {
+  register(payload: registerData) {
     return this.api.post<{ message: string; user_id: number }>('/auth/register', payload).pipe(
       switchMap(() => this.loadSession())
     );

@@ -1,30 +1,22 @@
 import { CommonModule } from '@angular/common';
-import { Component, Input } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Component, Input, HostBinding } from '@angular/core';
 
 @Component({
-  selector: 'app-button',
+  selector: 'button[appButton], a[appButton]',
   standalone: true,
-  imports: [CommonModule, RouterLink],
-  template: `
-    <button
-      [attr.type]="type"
-      [disabled]="disabled"
-      [routerLink]="routerLink"
-      [ngClass]="classes"
-    >
-      <ng-content></ng-content>
-    </button>
-  `
+  imports: [CommonModule],
+  templateUrl: './button.component.html',
+  host: {
+    '[class]': 'classes',
+    '[attr.disabled]': 'disabled ? true : null'
+  }
 })
 export class ButtonComponent {
   @Input() variant: 'primary' | 'success' | 'danger' | 'outline' | 'ghost' = 'primary';
   @Input() size: 'xs' | 'sm' | 'md' = 'md';
   @Input() shape: 'rounded' | 'pill' = 'rounded';
-  @Input() type: 'button' | 'submit' | 'reset' = 'button';
   @Input() disabled = false;
-  @Input() routerLink?: string | any[];
-  @Input() className = '';
+  @Input() class = '';
 
   get classes() {
     const base =
@@ -51,7 +43,7 @@ export class ButtonComponent {
       sizeMap[this.size],
       shapeMap[this.shape],
       variantMap[this.variant],
-      this.className
-    ];
+      this.class
+    ].filter(Boolean).join(' ');
   }
 }

@@ -71,7 +71,7 @@ class AccountController
     }
 
     // POST /accounts
-    public function create(Request $request, Response $response)
+    public function createAccount(Request $request, Response $response)
     {
         $data     = $request->getParsedBody();
         $currency = isset($data['currency']) ? strtoupper(trim($data['currency'])) : '';
@@ -133,14 +133,9 @@ class AccountController
         return $response->withHeader('Content-Type', 'application/json')->withStatus(201);
     }
 
-    // POST /accounts (alias)
-    public function createAccount(Request $request, Response $response)
-    {
-        return $this->create($request, $response);
-    }
 
     // GET /accounts/{account}
-    public function getMyAccount(Request $request, Response $response, $args)
+    public function getUserAccountById(Request $request, Response $response, $args)
     {
         $accountId = $args['account'] ?? '';
         if (! is_numeric($accountId) || $accountId === '') {
@@ -181,12 +176,6 @@ class AccountController
         return $response->withHeader('Content-Type', 'application/json')->withStatus(200);
     }
 
-    // GET /accounts/{account} (alias)
-    public function getUserAccountById(Request $request, Response $response, $args)
-    {
-        return $this->getMyAccount($request, $response, $args);
-    }
-
     // GET /admin/accounts
     public function getAllAccounts(Request $request, Response $response)
     {
@@ -213,47 +202,6 @@ class AccountController
         $stmt->close();
 
         $response->getBody()->write(json_encode(['accounts' => $accounts]));
-        return $response->withHeader('Content-Type', 'application/json')->withStatus(200);
-    }
-
-    // GET /admin/accounts/{account}
-    public function getAccountById(Request $request, Response $response, $args)
-    {
-        $accountId = $args['account'] ?? '';
-        if (! is_numeric($accountId) || $accountId === '') {
-            $response->getBody()->write(json_encode(['error' => 'Invalid or missing account id']));
-            return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
-        }
-
-        $status = $this->ensureAdmin($response);
-        if ($status !== 200) {
-            return $response->withHeader('Content-Type', 'application/json')->withStatus($status);
-        }
-
-        $mysqli = MysqlConnection::getInstance();
-        $stmt = $mysqli->prepare(
-            "SELECT a.id, a.user_id, a.currency, a.created_at, "
-            . "IFNULL(SUM(CASE WHEN t.type = 'deposit' THEN t.amount WHEN t.type = 'withdrawal' THEN -t.amount ELSE 0 END), 0) AS balance "
-            . "FROM `account` a "
-            . "LEFT JOIN `transaction` t ON t.account_id = a.id "
-            . "WHERE a.id = ? "
-            . "GROUP BY a.id LIMIT 1"
-        );
-        if (! $stmt) {
-            $response->getBody()->write(json_encode(['error' => 'Database error']));
-            return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
-        }
-        $stmt->bind_param('i', $accountId);
-        $stmt->execute();
-        $account = $stmt->get_result()->fetch_assoc();
-        $stmt->close();
-
-        if (! $account) {
-            $response->getBody()->write(json_encode(['error' => 'account not found']));
-            return $response->withHeader('Content-Type', 'application/json')->withStatus(404);
-        }
-
-        $response->getBody()->write(json_encode(['account' => $account]));
         return $response->withHeader('Content-Type', 'application/json')->withStatus(200);
     }
 
@@ -367,88 +315,6 @@ class AccountController
         return $response->withHeader('Content-Type', 'application/json')->withStatus(200);
     }
 
-    // POST /admin/accounts
-    // POST /users/{id}/accounts
-    public function adminCreate(Request $request, Response $response, $args = [])
-    {
-        $status = $this->ensureAdmin($response);
-        if ($status !== 200) {
-            return $response->withHeader('Content-Type', 'application/json')->withStatus($status);
-        }
-
-        $data     = $request->getParsedBody();
-        $userId   = $args['id'] ?? (isset($data['user_id']) ? $data['user_id'] : '');
-        $currency = isset($data['currency']) ? strtoupper(trim($data['currency'])) : '';
-
-        if (! is_numeric($userId) || $userId === '') {
-            $response->getBody()->write(json_encode(['error' => 'Invalid or missing user id']));
-            return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
-        }
-        if ($currency === '') {
-            $response->getBody()->write(json_encode(['error' => 'Missing currency']));
-            return $response->withHeader('Content-Type', 'application/json')->withStatus(400);
-        }
-
-        $mysqli = MysqlConnection::getInstance();
-
-        $stmt = $mysqli->prepare("SELECT 1 FROM `user` WHERE id = ? LIMIT 1");
-        if (! $stmt) {
-            $response->getBody()->write(json_encode(['error' => 'Database error']));
-            return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
-        }
-        $stmt->bind_param('i', $userId);
-        $stmt->execute();
-        $userExists = $stmt->get_result()->fetch_assoc();
-        $stmt->close();
-
-        if (! $userExists) {
-            $response->getBody()->write(json_encode(['error' => 'User not found']));
-            return $response->withHeader('Content-Type', 'application/json')->withStatus(404);
-        }
-
-        $stmt = $mysqli->prepare("SELECT COUNT(*) AS total FROM `account` WHERE user_id = ?");
-        if (! $stmt) {
-            $response->getBody()->write(json_encode(['error' => 'Database error']));
-            return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
-        }
-        $stmt->bind_param('i', $userId);
-        $stmt->execute();
-        $row = $stmt->get_result()->fetch_assoc();
-        $stmt->close();
-
-        if ((int) ($row['total'] ?? 0) >= 5) {
-            $response->getBody()->write(json_encode(['error' => 'Account limit reached (max 5 per user)']));
-            return $response->withHeader('Content-Type', 'application/json')->withStatus(409);
-        }
-
-        $stmt = $mysqli->prepare("SELECT 1 FROM `account` WHERE user_id = ? AND currency = ? LIMIT 1");
-        if (! $stmt) {
-            $response->getBody()->write(json_encode(['error' => 'Database error']));
-            return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
-        }
-        $stmt->bind_param('is', $userId, $currency);
-        $stmt->execute();
-        $exists = $stmt->get_result()->fetch_assoc();
-        $stmt->close();
-
-        if ($exists) {
-            $response->getBody()->write(json_encode(['error' => 'Account for this currency already exists']));
-            return $response->withHeader('Content-Type', 'application/json')->withStatus(409);
-        }
-
-        $stmt = $mysqli->prepare("INSERT INTO `account` (`user_id`, `currency`) VALUES (?, ?)");
-        if (! $stmt) {
-            $response->getBody()->write(json_encode(['error' => 'Database error']));
-            return $response->withHeader('Content-Type', 'application/json')->withStatus(500);
-        }
-        $stmt->bind_param('is', $userId, $currency);
-        $stmt->execute();
-        $accountId = $stmt->insert_id;
-        $stmt->close();
-
-        $response->getBody()->write(json_encode(['message' => 'Account created', 'account_id' => $accountId]));
-        return $response->withHeader('Content-Type', 'application/json')->withStatus(201);
-    }
 
     // PUT /admin/accounts/{account}
     public function adminUpdate(Request $request, Response $response, $args)

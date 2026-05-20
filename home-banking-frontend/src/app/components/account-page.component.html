@@ -7,89 +7,189 @@
     <a routerLink="/user" class="text-sm text-emerald-300 hover:text-emerald-200">Back to profile</a>
   </div>
 
-  <app-alert *ngIf="errorMessage" type="error">
-    {{ errorMessage }}
+  @if(errorMessage()) {
+  <app-alert  type="error">
+    {{ errorMessage() }}
   </app-alert>
+  }
+  @if (isLoading()) {
+    <div class="text-sm text-slate-400">Loading account...</div>
+  }
 
-  <div *ngIf="isLoading" class="text-sm text-slate-400">Loading account...</div>
-
-  <app-card *ngIf="account">
-    <div class="flex flex-wrap items-center justify-between gap-4">
+  @if (account() !== null) {
+     <app-card>
+       <div class="flex flex-wrap items-center justify-between gap-4">
       <div>
         <p class="text-sm text-slate-400">Currency</p>
-        <p class="text-xl font-semibold text-white">{{ account.currency }}</p>
+        <p class="text-xl font-semibold text-white">{{ account()!.currency }}</p>
       </div>
       <div>
         <p class="text-sm text-slate-400">Balance</p>
-        <p class="text-2xl font-semibold text-white">
-          {{ account.balance ?? 0 | number: '1.2-2' }} {{ account.currency }}
-        </p>
+        <div class="flex items-center gap-3">
+          <p class="text-2xl font-semibold text-white">
+            {{ account()!.balance ?? 0 | number: '1.2-2' }} {{ account()!.currency }}
+          </p>
+          <button appButton variant="primary" size="xs" (click)="openConversionModal()">View value in...</button>
+        </div>
+        <div class="mt-4 flex gap-2">
+          <button appButton variant="success" size="xs" (click)="openTransactionModal('deposit')">Deposit</button>
+          <button appButton variant="outline" size="xs" (click)="openTransactionModal('withdrawal')">Withdraw</button>
+        </div>
       </div>
       <div>
         <p class="text-sm text-slate-400">Created</p>
-        <p class="text-sm text-white">{{ account.created_at || '—' }}</p>
+        <p class="text-sm text-white">{{ account()!.created_at || '—' }}</p>
       </div>
     </div>
   </app-card>
-
+}
+  
   <app-card>
     <h2 class="text-xl font-semibold text-white">Transactions</h2>
     <div class="mt-4 grid gap-2">
-      <button
-        *ngFor="let transaction of transactions"
-        class="flex w-full items-center justify-between rounded-lg border border-slate-800 bg-slate-950/60 px-4 py-3 text-left transition hover:border-indigo-400/70"
-        (click)="openTransaction(transaction)"
-      >
-        <div>
-          <p class="text-sm text-slate-400">{{ transaction.description }}</p>
-          <p class="text-xs text-slate-500">{{ transaction.created_at || '—' }}</p>
-        </div>
-        <div class="text-right">
-          <p
-            class="text-sm font-semibold"
-            [class.text-emerald-300]="transaction.type === 'deposit'"
-            [class.text-rose-300]="transaction.type === 'withdrawal'"
-          >
-            {{ transaction.type === 'deposit' ? '+' : '-' }}{{ transaction.amount | number: '1.2-2' }}
-          </p>
-          <p class="text-xs text-slate-400 uppercase">{{ transaction.type }}</p>
-        </div>
-      </button>
+      @for (transaction of transactions(); track transaction.id) {
+        <button
+          class="flex w-full items-center justify-between rounded-lg border border-slate-800 bg-slate-950/60 px-4 py-3 text-left transition hover:border-indigo-400/70"
+          (click)="openTransaction(transaction)"
+        >
+          <div>
+            <p class="text-sm text-slate-400">{{ transaction.description }}</p>
+            <p class="text-xs text-slate-500">{{ transaction.created_at || '—' }}</p>
+          </div>
+          <div class="text-right">
+            <p
+              class="text-sm font-semibold"
+              [class.text-emerald-300]="transaction.type === 'deposit'"
+              [class.text-rose-300]="transaction.type === 'withdrawal'"
+            >
+              {{ transaction.type === 'deposit' ? '+' : '-' }}{{ transaction.amount | number: '1.2-2' }}
+            </p>
+            <p class="text-xs text-slate-400 uppercase">{{ transaction.type }}</p>
+          </div>
+        </button>
+      }
     </div>
   </app-card>
 </section>
 
-<div *ngIf="selectedTransaction" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4">
-  <app-card className="w-full max-w-lg shadow-xl" padding="p-6">
-    <div class="flex items-center justify-between">
-      <h3 class="text-lg font-semibold text-white">Transaction details</h3>
-      <app-button variant="ghost" size="sm" (click)="closeTransaction()">Close</app-button>
-    </div>
-    <div class="mt-4 grid gap-3 text-sm text-slate-300">
-      <div class="flex justify-between">
-        <span class="text-slate-400">ID</span>
-        <span>{{ selectedTransaction.id }}</span>
+@if (selectedTransaction(); as selected) {
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4"
+  >
+    <app-card class="w-full max-w-lg shadow-xl" padding="p-6">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold text-white">Transaction details</h3>
+        <button appButton variant="ghost" size="sm" (click)="closeTransaction()">Close</button>
       </div>
-      <div class="flex justify-between">
-        <span class="text-slate-400">Account ID</span>
-        <span>{{ selectedTransaction.account_id }}</span>
+      <div class="mt-4 grid gap-3 text-sm text-slate-300">
+        <div class="flex justify-between">
+          <span class="text-slate-400">ID</span>
+          <span>{{ selected.id }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">Account ID</span>
+          <span>{{ selected.account_id }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">Type</span>
+          <span class="uppercase">{{ selected.type }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">Amount</span>
+          <span>{{ selected.amount | number: '1.2-2' }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">Description</span>
+          <span>{{ selected.description }}</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-400">Created</span>
+          <span>{{ selected.created_at || '—' }}</span>
+        </div>
       </div>
-      <div class="flex justify-between">
-        <span class="text-slate-400">Type</span>
-        <span class="uppercase">{{ selectedTransaction.type }}</span>
+    </app-card>
+  </div>
+}
+
+@if (isTransactionModalOpen()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4">
+    <app-card class="w-full max-w-md shadow-xl" padding="p-6">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold text-white capitalize">{{ transactionType() }}</h3>
+        <button appButton variant="ghost" size="sm" (click)="closeTransactionModal()">Close</button>
       </div>
-      <div class="flex justify-between">
-        <span class="text-slate-400">Amount</span>
-        <span>{{ selectedTransaction.amount | number: '1.2-2' }}</span>
+      
+      <form class="mt-4 grid gap-4" (ngSubmit)="submitTransaction()">
+        <div class="grid gap-2">
+          <label class="text-sm text-slate-300">Amount</label>
+          <input
+            type="number"
+            name="amount"
+            [ngModel]="transactionAmount()"
+            (ngModelChange)="transactionAmount.set($event)"
+            class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white"
+            required
+            min="0.01"
+            step="0.01"
+          />
+        </div>
+        <div class="grid gap-2">
+          <label class="text-sm text-slate-300">Description</label>
+          <input
+            type="text"
+            name="description"
+            [ngModel]="transactionDescription()"
+            (ngModelChange)="transactionDescription.set($event)"
+            class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white"
+            placeholder="Optional description"
+          />
+        </div>
+        
+        <div class="mt-2 flex justify-end gap-2">
+          <button appButton type="button" variant="ghost" (click)="closeTransactionModal()">Cancel</button>
+          <button appButton type="submit" variant="primary" [disabled]="isSubmitting() || !transactionAmount()">
+            {{ isSubmitting() ? 'Processing...' : 'Confirm' }}
+          </button>
+        </div>
+      </form>
+    </app-card>
+  </div>
+}
+
+@if (isConversionModalOpen()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4">
+    <app-card class="w-full max-w-md shadow-xl" padding="p-6">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold text-white">View in another currency</h3>
+        <button appButton variant="ghost" size="sm" (click)="closeConversionModal()">Close</button>
       </div>
-      <div class="flex justify-between">
-        <span class="text-slate-400">Description</span>
-        <span>{{ selectedTransaction.description }}</span>
+      
+      <div class="mt-4 grid gap-4">
+        <div class="grid gap-2">
+          <label class="text-sm text-slate-300">Select Currency</label>
+          <select
+            [ngModel]="targetCurrency()"
+            (ngModelChange)="targetCurrency.set($event)"
+            class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white"
+          >
+            @for (curr of availableCurrencies; track curr) {
+              <option [value]="curr" [disabled]="curr === account()?.currency">{{ curr }}</option>
+            }
+          </select>
+        </div>
+        
+        <div class="mt-4 rounded-lg bg-slate-900/50 p-4 border border-slate-800 text-center">
+          <p class="text-sm text-slate-400">Equivalent Value</p>
+          <p class="mt-1 text-2xl font-semibold text-white">
+            @if (convertedAmount() !== null) {
+              {{ convertedAmount() | number: '1.2-6' }} <span class="text-lg text-slate-400">{{ targetCurrency() }}</span>
+            } @else {
+              <span class="text-base text-slate-500">Unavailable</span>
+            }
+          </p>
+          <p class="mt-2 text-xs text-slate-500">Estimated value. Balances are held natively.</p>
+        </div>
       </div>
-      <div class="flex justify-between">
-        <span class="text-slate-400">Created</span>
-        <span>{{ selectedTransaction.created_at || '—' }}</span>
-      </div>
-    </div>
-  </app-card>
-</div>
+    </app-card>
+  </div>
+}

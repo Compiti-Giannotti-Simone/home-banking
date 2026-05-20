@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { map } from 'rxjs';
-import { Account, Transaction } from '../models';
+import { Account } from '../interfaces/account';
+import { Transaction } from '../interfaces/transaction';
 import { ApiService } from './api.service';
 
 @Injectable({ providedIn: 'root' })
@@ -9,6 +10,10 @@ export class AccountService {
 
   getAccounts() {
     return this.api.get<{ accounts: Account[] }>('/accounts');
+  }
+
+  createAccount(currency: string) {
+    return this.api.post<{ account: Account }>('/accounts', { currency });
   }
 
   getAccount(accountId: number) {

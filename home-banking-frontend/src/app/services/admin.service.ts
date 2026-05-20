@@ -1,7 +1,10 @@
 import { Injectable } from '@angular/core';
 import { map } from 'rxjs';
 import { ApiService } from './api.service';
-import { Account, Transaction, User } from '../models';
+import { User } from '../interfaces/user';
+import { Account } from '../interfaces/account';
+import { Transaction } from '../interfaces/transaction'; 
+
 
 @Injectable({ providedIn: 'root' })
 export class AdminService {

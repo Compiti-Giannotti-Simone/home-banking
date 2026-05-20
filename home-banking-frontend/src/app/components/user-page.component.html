@@ -1,55 +1,99 @@
 <section class="grid gap-6">
   <app-card>
     <h2 class="text-xl font-semibold text-white">User profile</h2>
-    <div *ngIf="user" class="mt-4 grid gap-2 text-sm text-slate-300 md:grid-cols-2">
-      <div>
-        <p class="text-slate-400">Name</p>
-        <p class="text-white">{{ user.name }} {{ user.surname }}</p>
+    @if (user) {
+      <div class="mt-4 grid gap-2 text-sm text-slate-300 md:grid-cols-2">
+        <div>
+          <p class="text-slate-400">Name</p>
+          <p class="text-white">{{ user.name }} {{ user.surname }}</p>
+        </div>
+        <div>
+          <p class="text-slate-400">Email</p>
+          <p class="text-white">{{ user.email || '—' }}</p>
+        </div>
+        <div>
+          <p class="text-slate-400">Username</p>
+          <p class="text-white">{{ user.username || '—' }}</p>
+        </div>
+        <div>
+          <p class="text-slate-400">Role</p>
+          <p class="text-white">{{ user.is_admin ? 'Administrator' : 'Standard user' }}</p>
+        </div>
       </div>
-      <div>
-        <p class="text-slate-400">Email</p>
-        <p class="text-white">{{ user.email || '—' }}</p>
-      </div>
-      <div>
-        <p class="text-slate-400">Username</p>
-        <p class="text-white">{{ user.username || '—' }}</p>
-      </div>
-      <div>
-        <p class="text-slate-400">Role</p>
-        <p class="text-white">{{ user.is_admin ? 'Administrator' : 'Standard user' }}</p>
-      </div>
-    </div>
+    }
   </app-card>
 
   <app-card>
     <div class="flex items-center justify-between">
       <h2 class="text-xl font-semibold text-white">Accounts</h2>
-      <app-button variant="outline" size="sm" (click)="fetchAccounts()">Refresh</app-button>
+      <div class="flex gap-2">
+        <button appButton variant="primary" size="sm" (click)="openCreateAccountModal()">New Account</button>
+        <button appButton variant="outline" size="sm" (click)="fetchAccounts()">Refresh</button>
+      </div>
     </div>
 
-    <app-alert *ngIf="errorMessage" className="mt-4" type="error">
-      {{ errorMessage }}
-    </app-alert>
+    @if (errorMessage()) {
+      <app-alert class="mt-4" type="error">
+        {{ errorMessage() }}
+      </app-alert>
+    }
 
-    <div *ngIf="isLoading" class="mt-4 text-sm text-slate-400">Loading accounts...</div>
-
-    <div *ngIf="!isLoading" class="mt-4 grid gap-4 md:grid-cols-2">
-      <a
-        *ngFor="let account of accounts"
-        [routerLink]="['/accounts', account.id]"
-        class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 transition hover:border-emerald-500/60"
-      >
-        <div class="flex items-center justify-between">
-          <h3 class="text-lg font-semibold text-white">Account #{{ account.id }}</h3>
-          <span class="rounded-full bg-emerald-500/10 px-3 py-1 text-xs uppercase text-emerald-200">
-            {{ account.currency }}
-          </span>
-        </div>
-        <p class="mt-3 text-sm text-slate-400">Balance</p>
-        <p class="text-xl font-semibold text-white">
-          {{ account.balance ?? 0 | number: '1.2-2' }} {{ account.currency }}
-        </p>
-      </a>
-    </div>
+    @if (isLoading()) {
+      <div class="mt-4 text-sm text-slate-400">Loading accounts...</div>
+    }
+    @else {
+      <div class="mt-4 grid gap-4 md:grid-cols-2">
+        @for (account of accounts(); track account.id) {
+          <a
+            [routerLink]="['/accounts', account.id]"
+            class="rounded-xl border border-slate-800 bg-slate-950/60 p-4 transition hover:border-emerald-500/60"
+          >
+            <div class="flex items-center justify-between">
+              <h3 class="text-lg font-semibold text-white">Account #{{ account.id }}</h3>
+            </div>
+            <p class="mt-3 text-sm text-slate-400">Balance</p>
+            <p class="text-xl font-semibold text-white">
+              {{ account.balance ?? 0 | number: '1.2-2' }} {{ account.currency }}
+            </p>
+          </a>
+        }
+      </div>
+    }
   </app-card>
 </section>
+
+@if (isCreateAccountModalOpen()) {
+  <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 p-4">
+    <app-card class="w-full max-w-md shadow-xl" padding="p-6">
+      <div class="flex items-center justify-between">
+        <h3 class="text-lg font-semibold text-white">Create New Account</h3>
+        <button appButton variant="ghost" size="sm" (click)="closeCreateAccountModal()">Close</button>
+      </div>
+      
+      <form class="mt-4 grid gap-4" (ngSubmit)="submitCreateAccount()">
+        <div class="grid gap-2">
+          <label class="text-sm text-slate-300">Currency</label>
+          <select
+            name="currency"
+            [ngModel]="newAccountCurrency()"
+            (ngModelChange)="newAccountCurrency.set($event)"
+            class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white"
+            required
+          >
+            <option value="USD">USD - US Dollar</option>
+            <option value="EUR">EUR - Euro</option>
+            <option value="GBP">GBP - British Pound</option>
+            <option value="JPY">JPY - Japanese Yen</option>
+          </select>
+        </div>
+        
+        <div class="mt-2 flex justify-end gap-2">
+          <button appButton type="button" variant="ghost" (click)="closeCreateAccountModal()">Cancel</button>
+          <button appButton type="submit" variant="primary" [disabled]="isCreatingAccount()">
+            {{ isCreatingAccount() ? 'Creating...' : 'Create Account' }}
+          </button>
+        </div>
+      </form>
+    </app-card>
+  </div>
+}

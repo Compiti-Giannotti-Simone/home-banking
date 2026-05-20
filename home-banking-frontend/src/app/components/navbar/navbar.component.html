@@ -1,45 +1,39 @@
 <header class="border-b border-slate-800 bg-slate-900/80 backdrop-blur">
   <div class="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
     <div>
-      <p class="text-sm uppercase tracking-[0.3em] text-emerald-300">Home Banking</p>
-      <p class="text-xs text-slate-400">Simple Angular dashboard</p>
+      @if (user()) {
+        <a routerLink="/user" class="text-md uppercase tracking-[0.2em] text-blue-300">Home Banking</a>
+      }
+      @else {
+        <a routerLink="/login" class="text-md uppercase tracking-[0.2em] text-blue-300">Home Banking</a>
+      }
     </div>
     <nav class="flex items-center gap-4 text-sm">
-      <a routerLink="/user" routerLinkActive="text-white" class="text-slate-400 hover:text-white">Profile</a>
-      <a
-        *ngIf="isAdmin()"
-        routerLink="/admin"
-        routerLinkActive="text-white"
-        class="text-slate-400 hover:text-white"
-      >
+      @if (user()) {
+      <a routerLink="/user" routerLinkActive="text-white" class="text-slate-400 hover:text-white">
+        Profile
+      </a>
+      }
+      @if (isAdmin()) {
+      <a routerLink="/admin" routerLinkActive="text-white" class="text-slate-400 hover:text-white">
         Admin
       </a>
-      <a
-        *ngIf="!user()"
-        routerLink="/login"
-        routerLinkActive="text-white"
-        class="text-slate-400 hover:text-white"
-      >
+      }
+      @if (!user()) {
+      <a routerLink="/login" routerLinkActive="text-white" class="text-slate-400 hover:text-white">
         Login
       </a>
-      <app-button
-        *ngIf="!user()"
-        [routerLink]="'/register'"
-        variant="outline"
-        shape="pill"
-        size="sm"
-      >
+      }
+      @if (!user()) {
+      <button appButton [routerLink]="'/register'" variant="outline" shape="pill" size="sm">
         Register
-      </app-button>
-      <app-button
-        *ngIf="user()"
-        variant="outline"
-        shape="pill"
-        size="sm"
-        (click)="logout()"
-      >
+      </button>
+      }
+      @if (user()) {
+      <button appButton variant="outline" shape="pill" size="sm" (click)="logout()">
         Logout
-      </app-button>
+      </button>
+      }
     </nav>
   </div>
 </header>

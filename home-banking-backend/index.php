@@ -32,12 +32,10 @@ $app->get('/accounts/{account}/convert/crypto', 'ConversionController:toCrypto')
 
 //Admin endpoints (for administrators only)
 $app->get('/admin/users', 'UserController:getAllUsers');
-$app->get('/admin/users/{id}', 'UserController:getUserById');
 $app->put('/admin/users/{id}', 'UserController:adminUpdate');
 $app->delete('/admin/users/{id}', 'UserController:adminDelete');
 
 $app->get('/admin/accounts', 'AccountController:getAllAccounts');
-$app->get('/admin/accounts/{account}', 'AccountController:getAccountById');
 $app->put('/admin/accounts/{account}', 'AccountController:adminUpdate');
 $app->delete('/admin/accounts/{account}', 'AccountController:adminDelete');
 
