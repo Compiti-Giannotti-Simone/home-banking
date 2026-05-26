@@ -31,11 +31,30 @@ export class AccountPageComponent implements OnInit {
   isConversionModalOpen = signal(false);
   targetCurrency = signal('EUR');
 
-  availableCurrencies = ['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'BTC', 'ETH'];
+  currencySearch = signal('');
+  isCurrencyDropdownOpen = signal(false);
+
+  availableCurrencies = signal<string[]>([
+    'AUD', 'CAD', 'CHF', 'CNY', 'EUR', 'GBP', 'INR', 'JPY', 'NZD', 'USD',
+    'BNB', 'BTC', 'ETH', 'SOL', 'USDC', 'USDT'
+  ]);
+  
+  private cryptoSet = new Set<string>([
+    'BNB', 'BTC', 'ETH', 'SOL', 'USDC', 'USDT'
+  ]);
 
   convertedAmount = signal<number | null>(null);
 
-  constructor(private route: ActivatedRoute, private accountService: AccountService) {}
+  filteredCurrencies = computed(() => {
+    const search = this.currencySearch().toLowerCase();
+    const all = this.availableCurrencies();
+    return search ? all.filter(c => c.toLowerCase().includes(search)) : all;
+  });
+
+  constructor(
+    private route: ActivatedRoute,
+    private accountService: AccountService
+  ) {}
 
   ngOnInit() {
     this.route.paramMap.subscribe((params: ParamMap) => {
@@ -96,6 +115,19 @@ export class AccountPageComponent implements OnInit {
     this.isTransactionModalOpen.set(false);
   }
 
+  toggleCurrencyDropdown() {
+    this.isCurrencyDropdownOpen.update(open => !open);
+    if (this.isCurrencyDropdownOpen()) {
+      this.currencySearch.set('');
+    }
+  }
+
+  selectCurrency(curr: string) {
+    this.targetCurrency.set(curr);
+    this.isCurrencyDropdownOpen.set(false);
+    this.fetchConversion();
+  }
+
   openConversionModal() {
     this.isConversionModalOpen.set(true);
     this.fetchConversion();
@@ -116,7 +148,7 @@ export class AccountPageComponent implements OnInit {
     
     this.convertedAmount.set(null);
     const target = this.targetCurrency();
-    const isCrypto = ['BTC', 'ETH'].includes(target);
+    const isCrypto = this.cryptoSet.has(target);
     
     const request = isCrypto 
       ? this.accountService.convertCrypto(acc.id, target) 
