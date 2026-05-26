@@ -169,7 +169,7 @@
           <label class="text-sm text-slate-300">Select Currency</label>
           <select
             [ngModel]="targetCurrency()"
-            (ngModelChange)="targetCurrency.set($event)"
+            (ngModelChange)="onTargetCurrencyChange($event)"
             class="w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2 text-sm text-white"
           >
             @for (curr of availableCurrencies; track curr) {

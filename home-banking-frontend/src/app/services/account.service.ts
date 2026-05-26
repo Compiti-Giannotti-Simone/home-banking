@@ -40,6 +40,14 @@ export class AccountService {
     return this.api.post(`/accounts/${accountId}/withdrawal`, payload);
   }
 
+  convertFiat(accountId: number, currency: string) {
+    return this.api.get<any>(`/accounts/${accountId}/convert/fiat?to=${currency}`);
+  }
+
+  convertCrypto(accountId: number, crypto: string) {
+    return this.api.get<any>(`/accounts/${accountId}/convert/crypto?to=${crypto}`);
+  }
+
   private normalizeTransaction(item: Transaction | unknown[]): Transaction {
     if (Array.isArray(item)) {
       const [id, account_id, type, amount, description, created_at] = item as [

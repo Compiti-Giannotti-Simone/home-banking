@@ -31,28 +31,9 @@ export class AccountPageComponent implements OnInit {
   isConversionModalOpen = signal(false);
   targetCurrency = signal('EUR');
 
-  // Mock exchange rates relative to USD
-  private exchangeRates: Record<string, number> = {
-    USD: 1,
-    EUR: 0.92,
-    GBP: 0.79,
-    JPY: 155.4,
-    CHF: 0.91,
-    BTC: 0.000015,
-    ETH: 0.00028
-  };
+  availableCurrencies = ['USD', 'EUR', 'GBP', 'JPY', 'CHF', 'BTC', 'ETH'];
 
-  availableCurrencies = Object.keys(this.exchangeRates);
-
-  convertedAmount = computed(() => {
-    const acc = this.account();
-    if (!acc || acc.balance == null || !this.exchangeRates[acc.currency] || !this.exchangeRates[this.targetCurrency()]) {
-      return null;
-    }
-    // Convert base to USD, then USD to target
-    const amountInUSD = acc.balance / this.exchangeRates[acc.currency];
-    return amountInUSD * this.exchangeRates[this.targetCurrency()];
-  });
+  convertedAmount = signal<number | null>(null);
 
   constructor(private route: ActivatedRoute, private accountService: AccountService) {}
 
@@ -117,10 +98,37 @@ export class AccountPageComponent implements OnInit {
 
   openConversionModal() {
     this.isConversionModalOpen.set(true);
+    this.fetchConversion();
   }
 
   closeConversionModal() {
     this.isConversionModalOpen.set(false);
+  }
+
+  onTargetCurrencyChange(currency: string) {
+    this.targetCurrency.set(currency);
+    this.fetchConversion();
+  }
+
+  fetchConversion() {
+    const acc = this.account();
+    if (!acc) return;
+    
+    this.convertedAmount.set(null);
+    const target = this.targetCurrency();
+    const isCrypto = ['BTC', 'ETH'].includes(target);
+    
+    const request = isCrypto 
+      ? this.accountService.convertCrypto(acc.id, target) 
+      : this.accountService.convertFiat(acc.id, target);
+
+    request.subscribe({
+      next: (res) => {
+        const amount = res?.converted_balance ?? res?.converted_amount ?? null;
+        this.convertedAmount.set(amount);
+      },
+      error: () => this.convertedAmount.set(null)
+    });
   }
 
   submitTransaction() {
